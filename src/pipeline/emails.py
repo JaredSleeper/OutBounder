@@ -239,6 +239,7 @@ async def find_emails(full_name: str, domain: str | None) -> EmailFinding:
 
     cands: dict[str, EmailCandidate] = {c.email: c for c in web_cands}
 
+    hunter_verified: dict[str, str] = {}
     hunter_hit = await hunter.find_email(first, last, domain)
     if hunter_hit:
         e = hunter_hit["email"].lower()
@@ -246,8 +247,15 @@ async def find_emails(full_name: str, domain: str | None) -> EmailFinding:
         c = cands.get(e) or EmailCandidate(email=e, confidence=score, source="hunter")
         c.confidence = max(c.confidence, score)
         c.evidence.append(f"hunter score {hunter_hit.get('score')}")
+        c.evidence.extend(hunter_hit.get("sources") or [])
         cands[e] = c
+        hunter_verified[e] = hunter_hit.get("verification") or "unknown"
         inferred = infer_pattern(e, first, last) or inferred
+    elif hunter.configured() and inferred is None:
+        fmt = await hunter.domain_pattern(domain)
+        inferred = next((name for name, f in PATTERNS.items() if f == fmt), None)
+        if inferred:
+            checks.note = f"Hunter: {domain} mostly uses {inferred}. {checks.note}".strip()
 
     perms = permutations(first, last, domain)
     for pat, addr in perms.items():
@@ -281,6 +289,28 @@ async def find_emails(full_name: str, domain: str | None) -> EmailFinding:
     if not checks.mx_hosts:
         for c in ordered:
             c.confidence = min(c.confidence, 0.05)
+
+    # Hunter's verifier sees through catch-alls our single RCPT probe can't; spend it on
+    # the top guesses that are still unconfirmed.
+    if hunter.configured():
+        ordered.sort(key=lambda c: -c.confidence)
+        for c in ordered[:2]:
+            if c.email in hunter_verified or c.verification == "valid" or c.confidence < 0.1:
+                continue
+            v = await hunter.verify(c.email)
+            if v:
+                hunter_verified[c.email] = v["status"]
+                c.evidence.append(f"hunter verifier {v.get('score')}")
+    for c in ordered:
+        hv = hunter_verified.get(c.email)
+        if hv == "valid":
+            c.verification = "valid"
+            c.confidence = max(c.confidence, 0.97 if c.source == "hunter" else 0.95)
+        elif hv == "invalid":
+            c.verification = "invalid"
+            c.confidence = min(c.confidence, 0.05)
+        elif hv == "catch_all" and c.verification == "unknown":
+            c.verification = "catch_all"
 
     ordered.sort(key=lambda c: -c.confidence)
     best = ordered[0].email if ordered and ordered[0].confidence >= 0.15 else None
