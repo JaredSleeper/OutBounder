@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Outbounder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css?v={{ asset_version }}">
+  <script>window.OUTBOUNDER = { authEnabled: {{ 'true' if auth_enabled else 'false' }} };</script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">Out<span>bounder</span></a>
+    <nav class="crumbs" id="crumbs"></nav>
+    <div class="spacer"></div>
+    <span class="providers" id="providers" title="Configured providers"></span>
+    <button class="btn btn-primary" id="new-list-btn">+ New list</button>
+  </header>
+  <main id="view" class="view"></main>
+  <aside id="drawer" class="drawer hidden"></aside>
+  <div class="modal-backdrop hidden" id="modal-backdrop"><div class="modal" id="modal" role="dialog"></div></div>
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/app.js?v={{ asset_version }}"></script>
+</body>
+</html>
