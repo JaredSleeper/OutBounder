@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -5,12 +6,25 @@ from fastapi import Depends, FastAPI
 from src import worker
 from src.api import health, lists, targets
 from src.auth import require_user
+from src.config import settings
 from src.db import close_db, init_db
 from src.web import routes as web_routes
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not settings.auth_enabled:
+        if not settings.allow_no_auth:
+            raise RuntimeError(
+                "Refusing to start: APP_PASSWORD is not set. Set it, or "
+                "set ALLOW_NO_AUTH=true for local development only."
+            )
+        logger.warning(
+            "AUTH DISABLED: ALLOW_NO_AUTH=true and APP_PASSWORD unset — "
+            "/api/* is publicly accessible. Never use this in a public deployment."
+        )
     await init_db()
     worker.start()
     yield

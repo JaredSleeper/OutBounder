@@ -39,7 +39,7 @@ parse, no lookups) so the UI can still be exercised.
 ## Deploy (Railway)
 
 1. Create a Postgres database; set `DATABASE_URL` on the service.
-2. Set `APP_PASSWORD` (shared password gate), `ANTHROPIC_API_KEY`, `EXA_API_KEY`,
+2. Set `APP_PASSWORD` (required shared password gate; the app refuses to start without it unless `ALLOW_NO_AUTH=true` for local development only), `ANTHROPIC_API_KEY`, `EXA_API_KEY`,
    optionally `FIRECRAWL_API_KEY`, `HUNTER_API_KEY`.
 3. Deploy with the Dockerfile (`railway.toml` handles the healthcheck).
 

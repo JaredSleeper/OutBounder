@@ -8,8 +8,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     public_url: str = ""
 
-    # Shared password for the hosted draft; empty disables auth.
+    # Shared password for the hosted draft. Required unless ALLOW_NO_AUTH=true.
     app_password: str = ""
+    # Explicit opt-out for local dev only; never set in a public deployment.
+    allow_no_auth: bool = False
 
     anthropic_api_key: str = ""
     default_llm_model: str = "claude-sonnet-5"
